@@ -19,6 +19,10 @@ public class AnimCurveCompressionCodec_ACL : UAnimCurveCompressionCodec
             nReadCurveACLData(compressedTracks.Handle, floatKeysPtr);
         }
 
+        // 'compressedTracks' is only reachable through the raw Handle above, so without this the GC is
+        // free to finalize it mid-call and nDeallocate the buffer the decompressor is reading.
+        GC.KeepAlive(compressedTracks);
+
         var floatCurves = new FFloatCurve[names.Length];
         for (var curveIndex = 0; curveIndex < floatCurves.Length; curveIndex++)
         {

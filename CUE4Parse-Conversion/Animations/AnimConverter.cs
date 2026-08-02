@@ -199,6 +199,10 @@ namespace CUE4Parse_Conversion.Animations
                         }
                     }
 
+                    // 'tracks' is only reachable through the raw Handle above, so without this the GC is
+                    // free to finalize it mid-call and nDeallocate the buffer the decompressor is reading.
+                    GC.KeepAlive(tracks);
+
                     // Prepare buffers of all samples of each transform property for the native code to populate
                     var posKeys = new FVector[atomKeys.Length];
                     var rotKeys = new FQuat[atomKeys.Length];
