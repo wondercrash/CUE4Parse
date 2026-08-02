@@ -95,6 +95,20 @@ namespace CUE4Parse.FileProvider.Vfs
             uptnls = uptnlList.AsReadOnly();
         }
 
+        // Patch containers (_P) get a higher ReadOrder than the base pak they override.
+        // The path index honours that in TryGetValue; the package id index must too, otherwise
+        // imports resolved by id (IoPackage.ImportedPackages) can bind to the stale base package
+        // while the same path resolves to the patched one.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static long GetReadOrder(GameFile file) => file is VfsEntry vfsEntry ? vfsEntry.Vfs.ReadOrder : 0;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void RegisterPackage(ConcurrentDictionary<FPackageId, GameFile> packageIndex, FPackageId packageId, GameFile file)
+            => packageIndex.AddOrUpdate(packageId,
+                static (_, f) => f,
+                static (_, existing, f) => GetReadOrder(f) >= GetReadOrder(existing) ? f : existing,
+                file);
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddFiles(IReadOnlyDictionary<string, GameFile> newFiles, long readOrder = 0,
             IReadOnlyDictionary<FPackageId, GameFile>? packageFiles = null)
@@ -108,7 +122,7 @@ namespace CUE4Parse.FileProvider.Vfs
                     // only load the normal package in this dict for later use by IoPackage.ImportedPackages
                     if (file is FIoStoreEntry { IsPackageData: true, IsOptionalPackage: false } ioEntry)
                     {
-                        (packageIndex ??= GetPackageIndex())[ioEntry.ChunkId.AsPackageId()] = file;
+                        RegisterPackage(packageIndex ??= GetPackageIndex(), ioEntry.ChunkId.AsPackageId(), file);
                     }
                 }
             }
@@ -116,7 +130,7 @@ namespace CUE4Parse.FileProvider.Vfs
             {
                 var packageIndex = GetPackageIndex();
                 foreach (var (packageId, file) in packageFiles)
-                    packageIndex[packageId] = file;
+                    RegisterPackage(packageIndex, packageId, file);
             }
 
             _indicesBag.Add(new KeyValuePair<long, IReadOnlyDictionary<string, GameFile>>(readOrder, newFiles));
