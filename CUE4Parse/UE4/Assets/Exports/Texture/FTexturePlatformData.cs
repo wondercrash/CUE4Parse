@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Assets.Readers;
+using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Versions;
 
 namespace CUE4Parse.UE4.Assets.Exports.Texture;
@@ -42,7 +43,7 @@ public class FTexturePlatformData
     private const uint BitMask_NumSlices = BitMask_HasOptData - 1u;
 
     public readonly int SizeX;
-    public int SizeY;
+    public readonly int SizeY;
     public readonly uint PackedData; // NumSlices: 1 for simple texture, 6 for cubemap - 6 textures are joined into one
     public readonly string PixelFormat;
     public readonly FOptTexturePlatformData OptData;
@@ -72,7 +73,7 @@ public class FTexturePlatformData
                 throw new NotImplementedException("FTexturePlatformData deserialization using derived data is not implemented.");
             Ar.Position += PlaceholderDerivedDataSize - 1;
         }
-        else if (Ar is { Game: >= GAME_UE5_0, IsFilterEditorOnly: true })
+        else if (Ar is { Game: >= GAME_UE5_0, IsFilterEditorOnly: true } && Ar.Game is not (GAME_UE5_EA_Legacy or GAME_UE5_EA or GAME_TheMatrixAwakens))
         {
             Ar.Position += PlaceholderDerivedDataSize;
         }
@@ -101,6 +102,23 @@ public class FTexturePlatformData
             var unk0 = Ar.Read<int>();
             var unk1 = Ar.Read<int>();
             var mapNum = Ar.Read<int>();
+        }
+
+        if (Ar.Game is GAME_DeadIsland2)
+        {
+            if ((PackedData & (1u << 28)) != 0)
+            {
+                var scale = Ar.Read<FVector2D>();
+            }
+            else if (HasCpuCopy())
+            {
+                FirstMipToSerialize = Ar.Read<int>();
+                Mips = Ar.ReadArray(() => new FTexture2DMipMap(Ar, bSerializeMipData));
+                var bIsVirtual = Ar.ReadBoolean();
+                SizeX = Mips[0].SizeX;
+                SizeY = Mips[0].SizeY;
+                return;
+            }
         }
 
         if (HasOptData())
@@ -137,14 +155,6 @@ public class FTexturePlatformData
         for (var i = 0; i < Mips.Length; i++)
         {
             Mips[i] = new FTexture2DMipMap(Ar, bSerializeMipData);
-
-            if (Owner is UVolumeTexture or UTextureCube)
-            {
-                var slices = GetNumSlices();
-                if (Ar.Game == GAME_Borderlands4) slices = slices != 1 ? slices >> 1 : 1;
-                Mips[i].SizeY *= slices;
-                Mips[i].SizeZ = Mips[i].SizeZ == slices ? 1 : Mips[i].SizeZ;
-            }
         }
 
         if (Ar.Versions["VirtualTextures"])
@@ -163,9 +173,6 @@ public class FTexturePlatformData
         {
             SizeX = Mips[0].SizeX;
             SizeY = Mips[0].SizeY;
-
-            if (Owner is UVolumeTexture)
-                PackedData = (uint) ((Mips[0].SizeZ & BitMask_NumSlices) | (PackedData & ~BitMask_NumSlices));
         }
         else if (VTData != null)
         {

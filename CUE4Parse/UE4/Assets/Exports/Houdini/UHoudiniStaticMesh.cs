@@ -1,19 +1,20 @@
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Assets.Readers;
 using CUE4Parse.UE4.Objects.Core.Math;
+using CUE4Parse.UE4.Objects.UObject;
 
 namespace CUE4Parse.UE4.Assets.Exports.Houdini;
 
 public class UHoudiniStaticMesh : UObject
 {
-    public FVector[] VertexPositions;
-    public FIntVector[] TriangleIndices;
-    public FColor[] VertexInstanceColors;
-    public FVector[] VertexInstanceNormals;
-    public FVector[] VertexInstanceUTangents;
-    public FVector[] VertexInstanceVTangents;
-    public FVector2D[] VertexInstanceUVs;
-    public int[] MaterialIDsPerTriangle;
+    public FVector[] VertexPositions = [];
+    public FIntVector[] TriangleIndices = [];
+    public FColor[] VertexInstanceColors = [];
+    public FVector[] VertexInstanceNormals = [];
+    public FVector[] VertexInstanceUTangents = [];
+    public FVector[] VertexInstanceVTangents = [];
+    public FVector2D[] VertexInstanceUVs = [];
+    public int[] MaterialIDsPerTriangle = [];
 
     public bool bHasNormals;
     public bool bHasTangents;
@@ -21,11 +22,15 @@ public class UHoudiniStaticMesh : UObject
     public uint NumUVLayers;
     public bool bHasPerFaceMaterials;
     public FStaticMaterial[]? StaticMaterials;
-    public ResolvedObject?[] Materials;
+    public FPackageIndex?[] Materials = [];
 
     public override void Deserialize(FAssetArchive Ar, long validPos)
     {
         base.Deserialize(Ar, validPos);
+
+#if DEBUG
+        Log.Debug(nameof(UHoudiniStaticMesh));
+#endif
 
         bHasNormals = GetOrDefault<bool>(nameof(bHasNormals));
         bHasTangents = GetOrDefault<bool>(nameof(bHasTangents));
@@ -43,7 +48,7 @@ public class UHoudiniStaticMesh : UObject
         VertexInstanceUVs = Ar.ReadBulkArray<FVector2D>();
         MaterialIDsPerTriangle = Ar.ReadBulkArray<int>();
 
-        Materials = new ResolvedObject[StaticMaterials.Length];
+        Materials = new FPackageIndex[StaticMaterials.Length];
         for (var i = 0; i < Materials.Length; i++)
         {
             Materials[i] = StaticMaterials[i].MaterialInterface;

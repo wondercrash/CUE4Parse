@@ -300,7 +300,7 @@ namespace CUE4Parse.UE4.Objects.Core.Math
         public FVector Abs() => new(MathF.Abs(X), MathF.Abs(Y), MathF.Abs(Z));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float Size() => MathF.Sqrt(X * X + Y * Y + Z * Z);
+        public readonly float Size() => MathF.Sqrt(X * X + Y * Y + Z * Z);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float SizeSquared() => X * X + Y * Y + Z * Z;
@@ -562,7 +562,7 @@ namespace CUE4Parse.UE4.Objects.Core.Math
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float DistSquared(FVector v1, FVector v2) => (v2.X - v1.X).Square() + (v2.Y - v1.Y).Square() + (v2.Z - v1.Z).Square();
 
-        public void Serialize(FArchiveWriter Ar)
+        public readonly void Serialize(FArchiveWriter Ar)
         {
             Ar.Write(X);
             Ar.Write(Y);

@@ -168,9 +168,21 @@ public class FStaticMeshSceneProxyDesc
             Ar.Position += 92;
             return;
         }
-        MeshPaintTexture = Ar.Game >= GAME_UE5_8 ? Ar.ReadFPackageIndex() : new FPackageIndex();
+        MeshPaintTexture = Ar.Game is >= GAME_UE5_8 or GAME_GearsofWarEDay ? Ar.ReadFPackageIndex() : new FPackageIndex();
         OverlayMaterial = Ar.ReadFPackageIndex();
         MaterialSlotsOverlayMaterial = Ar.ReadArray(Ar.ReadFPackageIndex);
+        if (Ar.Game is GAME_GearsofWarEDay)
+        {
+            Ar.Position += 84;
+            return;
+        }
+        if (Ar.Game is GAME_Splitgate2)
+        {
+            Ar.Position += 72;
+            Ar.SkipFixedArray(34);
+            Ar.Position += 17;
+            return;
+        }
         OverlayMaterialMaxDrawDistance = Ar.Read<float>();
         ForcedLodModel = Ar.Read<int>();
         MinLOD = Ar.Read<int>();
@@ -196,7 +208,7 @@ public class FStaticMeshSceneProxyDesc
 public class FInstancedStaticMeshSceneProxyDesc(FFastGeoArchive Ar)// : FStaticMeshSceneProxyDesc
 {
     public float InstanceLODDistanceScale = Ar.Read<float>();
-    public int InstanceMinDrawDistance = Ar.Read<int>();
+    public int InstanceMinDrawDistance = Ar.Game != GAME_Splitgate2 ? Ar.Read<int>() : 0;
     public int InstanceStartCullDistance = Ar.Read<int>();
     public int InstanceEndCullDistance = Ar.Read<int>();
     public bool bUseGpuLodSelection = Ar.ReadBoolean();

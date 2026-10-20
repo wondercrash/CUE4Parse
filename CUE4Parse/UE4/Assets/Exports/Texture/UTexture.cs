@@ -16,7 +16,6 @@ public class UBinkMediaTexture : UTexture;
 
 public class UTexture : UUnrealMaterial, IAssetUserData
 {
-    
     public FGuid LightingGuid { get; private set; }
     public TextureCompressionSettings CompressionSettings { get; private set; }
     public TextureGroup LODGroup { get; private set; }
@@ -69,7 +68,7 @@ public class UTexture : UUnrealMaterial, IAssetUserData
         LightingGuid = GetOrDefault(nameof(LightingGuid), new FGuid((uint) GetFullName().GetHashCode()));
         CompressionSettings = GetOrDefault(nameof(CompressionSettings), TextureCompressionSettings.TC_Default);
         LODGroup = GetOrDefault(nameof(LODGroup), TextureGroup.TEXTUREGROUP_World);
-        Filter = GetOrDefault(nameof(Filter), TextureFilter.TF_Nearest);
+        Filter = GetOrDefault(nameof(Filter), TextureFilter.TF_Default);
         SRGB = GetOrDefault(nameof(SRGB), true);
         AssetUserData = GetOrDefault<FPackageIndex[]>(nameof(AssetUserData), []);
         CookPlatformTilingSettings = GetOrDefault<ETextureCookPlatformTilingSettings>(nameof(CookPlatformTilingSettings));
@@ -111,7 +110,6 @@ public class UTexture : UUnrealMaterial, IAssetUserData
             bSerializeMipData = data.X > 0 && data.Y == 0 && data.Z > 0 || Ar.ReadBoolean();
         }
         var pixelFormatName = Ar.ReadFName();
-        if (pixelFormatName.Text == "PF_BC6H_Signed") pixelFormatName = "PF_BC6H";
         while (!pixelFormatName.IsNone)
         {
             if (!Enum.TryParse(pixelFormatName.Text, ignoreCase: true, out EPixelFormat pixelFormat))
@@ -120,6 +118,7 @@ public class UTexture : UUnrealMaterial, IAssetUserData
             var skipOffset = Ar.Game switch
             {
                 GAME_WutheringWaves => Ar.AbsolutePosition + Ar.Read<long>(),
+                GAME_UE5_EA_Legacy or GAME_UE5_EA or GAME_TheMatrixAwakens => Ar.Read<long>(),
                 >= GAME_UE5_0 => Ar.AbsolutePosition + Ar.Read<long>(),
                 >= GAME_UE4_20 => Ar.Read<long>(),
                 _ => Ar.Read<int>()
@@ -129,7 +128,7 @@ public class UTexture : UUnrealMaterial, IAssetUserData
             {
                 //?? check whether we can support this pixel format
 #if DEBUG
-                //Log.Debug("Loading data for format {Format}", pixelFormatName);
+                Log.Debug("Loading data for format {Format}", pixelFormatName);
 #endif
                 PlatformData = new FTexturePlatformData(Ar, this, bSerializeMipData);
 
@@ -275,7 +274,7 @@ public class UTexture : UUnrealMaterial, IAssetUserData
         // ???
     }
 
-    public override void GetParams(CMaterialParams2 parameters, EMaterialFormat format)
+    public override void GetParams(CMaterialParams2 parameters, EMaterialDepth depth)
     {
         // Default empty method
         // ???

@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Berrysoft.XXTea" />
     <PackageReference Include="Blake3" />
     <PackageReference Include="BouncyCastle.Cryptography" />
     <PackageReference Include="FixedMathSharp" />
@@ -22,7 +23,7 @@
     <PackageReference Include="K4os.Compression.LZ4.Streams" />
     <PackageReference Include="SubstreamSharp" />
     <PackageReference Include="System.IO.Hashing" />
-    <PackageReference Include="System.Numerics.Tensors"/>
+    <PackageReference Include="System.Numerics.Tensors" />
     <PackageReference Include="VGAudio" />
     <PackageReference Include="Zlib-ng.NET" />
     <PackageReference Include="ZstdSharp.Port" />
@@ -39,6 +40,8 @@
     <EmbeddedResource Include="Resources\ProSpiDecryptor.dll.gz" />
     <None Remove="Resources\ShaderHashedNames.json" />
     <EmbeddedResource Include="Resources\ShaderHashedNames.json" />
+    <None Remove="Resources\MogKeyPool.bin" />
+    <EmbeddedResource Include="Resources\MogKeyPool.bin" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -47,8 +50,7 @@
     <CMakeBuildDir>$(CMakeProject)builddir</CMakeBuildDir>
   </PropertyGroup>
 
-  <Target Name="Build-Natives" BeforeTargets="BeforeBuild" AfterTargets="AfterBuild"
-    Condition="'$(CUE4PARSE_SKIP_NATIVE)' != 'true' and '$(CUE4PARSE_SKIP_NATIVE)' != '1'">
+  <Target Name="Build-Natives" BeforeTargets="BeforeBuild" AfterTargets="AfterBuild" Condition="'$(CUE4PARSE_SKIP_NATIVE)' != 'true' and '$(CUE4PARSE_SKIP_NATIVE)' != '1'">
     <MakeDir Directories="$(CMakeBuildDir)" Condition="!Exists('$(CMakeBuildDir)')" />
     <Exec Command="cmake .." ConsoleToMSBuild="true" WorkingDirectory="$(CMakeBuildDir)" IgnoreExitCode="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />

@@ -46,7 +46,7 @@ public class UMapBuildDataRegistry : UObject
                 ReflectionCaptureBuildData = Ar.ReadMap(Ar.Read<FGuid>, () => new FReflectionCaptureMapBuildData(Ar));
             }
 
-            if (Ar.Game is GAME_ArenaBreakoutInfinite or GAME_ArenaBreakoutMobile) return;
+            if (Ar.Game is GAME_ArenaBreakoutInfinite or GAME_ArenaBreakoutMobile or GAME_TamasShadowveil) return;
             if (Ar.Game == GAME_TheDivisionResurgence) Ar.Position += 12;
             if (Ar.Game == GAME_HogwartsLegacy)
             {
@@ -177,7 +177,7 @@ public class FReflectionCaptureData
             Ar.SkipFixedArray(1);
         }
 
-        if (Ar.Game == GAME_Valorant) Ar.SkipFixedArray(1);
+        if (Ar.Game is GAME_Valorant or GAME_TamasShadowveil) Ar.SkipFixedArray(1);
         if (Ar.Game == GAME_LordOfMysteries) Ar.Position += 4;
         if (Ar.Game == GAME_BlackMythWukong)
         {
@@ -243,7 +243,8 @@ public class FVolumeLightingSample
         {
             DirectionalLightShadowing = Ar.Read<float>();
         }
-        if (Ar.Game is EGame.GAME_RocoKingdomWorld) Ar.Position += 116;
+        if (Ar.Game is GAME_RocoKingdomWorld) Ar.Position += 116;
+        if (Ar.Game is GAME_DeadIsland2) Ar.Position += 8;
     }
 }
 
@@ -272,6 +273,7 @@ public class FPrecomputedLightVolumeData
             }
 
             HighQualitySamples = Ar.ReadArray(() => new FVolumeLightingSample(Ar, NumSHSamples is 9 ? 3 : 2));
+            if (Ar.Game is GAME_DeadIsland2) Ar.Position += 4;
             if (Ar.Ver >= EUnrealEngineObjectUE4Version.VOLUME_SAMPLE_LOW_QUALITY_SUPPORT)
             {
                 LowQualitySamples = Ar.ReadArray(() => new FVolumeLightingSample(Ar, NumSHSamples is 9 ? 3 : 2));
@@ -306,7 +308,7 @@ public class FPrecomputedVolumetricLightmapData
 
     public FPrecomputedVolumetricLightmapData(FArchive Ar)
     {
-        var bValid = Ar.ReadBoolean();
+        var bValid = Ar.Game is GAME_DeadIsland2 || Ar.ReadBoolean();
 
         if (bValid)
         {
@@ -341,11 +343,17 @@ public class FPrecomputedVolumetricLightmapData
 
             if (FMobileObjectVersion.Get(Ar) >= FMobileObjectVersion.Type.LQVolumetricLightmapLayers)
             {
-                if (FUE5MainStreamObjectVersion.Get(Ar) <= FUE5MainStreamObjectVersion.Type.MobileStationaryLocalLights || Ar.Game is GAME_SilverPalace)
+                if (FUE5MainStreamObjectVersion.Get(Ar) <= FUE5MainStreamObjectVersion.Type.MobileStationaryLocalLights || Ar.Game is GAME_SilverPalace or GAME_TamasShadowveil)
                 {
                     BrickData.LQLightColor = new FVolumetricLightmapDataLayer(Ar);
                     BrickData.LQLightDirection = new FVolumetricLightmapDataLayer(Ar);
                 }
+            }
+
+            if (Ar.Game is GAME_TamasShadowveil)
+            {
+                _ = new FVolumetricLightmapDataLayer(Ar);
+                Ar.Position += 4;
             }
 
             if (FRenderingObjectVersion.Get(Ar) >= FRenderingObjectVersion.Type.VolumetricLightmapStreaming)
@@ -377,7 +385,7 @@ public class FVolumetricLightmapBrickLayer : FVolumetricLightmapBasicBrickDataLa
 
 public class FVolumetricLightmapDataLayer(FArchive Ar)
 {
-    public byte[] Data = Ar.ReadArray<byte>();
+    public byte[] Data = Ar.Game is GAME_DeadIsland2 ? new FByteBulkData((FAssetArchive)Ar).Data! : Ar.ReadArray<byte>();
     public string PixelFormatString = Ar.ReadFString();
 }
 
@@ -551,6 +559,8 @@ public class FLightMap2D : FLightMap
                 AddVectors[CoefficientIndex] = Ar.Read<FVector4>();
             }
         }
+
+        if (Ar.Game is GAME_TamasShadowveil) Ar.Position += 4;
 
         CoordinateScale = new FVector2D(Ar);
         CoordinateBias = new FVector2D(Ar);
