@@ -54,6 +54,7 @@ public partial class FPakInfo
     public const uint PAK_FILE_MAGIC_AssaultFireFuture = 0x4F6FAE86;
     public const uint PAK_FILE_MAGIC_Back4Blood = 0x18772;
     public const uint PAK_FILE_MAGIC_SilverPalace = 0x12E15A6F;
+    internal const uint PAK_FILE_MAGIC_SilverPalace_StandardAes = 0xDD4F2A84;
     public const uint PAK_FILE_MAGIC_ValorantSource = 0x167C2AB4;
 
     public const int COMPRESSION_METHOD_NAME_LEN = 32;
@@ -379,7 +380,7 @@ public partial class FPakInfo
                 Ar.Game == GAME_DreamStar && Magic == PAK_FILE_MAGIC_DreamStar ||
                 Ar.Game == GAME_AssaultFireFuture && Magic == PAK_FILE_MAGIC_AssaultFireFuture ||
                 Ar.Game == GAME_KartRiderDrift && Magic == PAK_FILE_MAGIC_KartRiderDrift ||
-                Ar.Game == GAME_SilverPalace && Magic == PAK_FILE_MAGIC_SilverPalace)
+                Ar.Game == GAME_SilverPalace && Magic is PAK_FILE_MAGIC_SilverPalace or PAK_FILE_MAGIC_SilverPalace_StandardAes)
                 goto afterMagic;
             // Stop immediately when magic is wrong
             return;
@@ -450,7 +451,7 @@ public partial class FPakInfo
             IndexSize = (long) ((ulong) IndexSize ^ 0x6DB425B4BC084B4B) - 0xA8;
         }
 
-        if (Ar.Game is GAME_SilverPalace)
+        if (Ar.Game is GAME_SilverPalace && Magic != PAK_FILE_MAGIC_SilverPalace_StandardAes)
         {
             IndexOffset = (long) ((ulong) IndexOffset ^ 0x8b3c9f2a5e1d7046);
             IndexSize = (long) ((ulong) IndexSize ^ 0x8b3c9f2a5e1d7046);
@@ -714,7 +715,7 @@ public partial class FPakInfo
                     GAME_ArenaBreakoutMobile when info.Magic == PAK_FILE_MAGIC_ArenaBreakoutInfinite || (info.Magic & 0xFFFFFF00) == PAK_FILE_MAGIC_ArenaBreakoutMobile => true,
                     GAME_AssaultFireFuture when info.Magic == PAK_FILE_MAGIC_AssaultFireFuture => true,
                     GAME_Back4Blood when info.Magic == PAK_FILE_MAGIC_Back4Blood => true,
-                    GAME_SilverPalace when info.Magic == PAK_FILE_MAGIC_SilverPalace => true,
+                    GAME_SilverPalace when info.Magic is PAK_FILE_MAGIC_SilverPalace or PAK_FILE_MAGIC_SilverPalace_StandardAes => true,
                     GAME_ValorantSource when info.Magic == PAK_FILE_MAGIC_ValorantSource => true,
                     _ => info.Magic == PAK_FILE_MAGIC
                 };

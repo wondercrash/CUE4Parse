@@ -2,6 +2,9 @@ using System.Buffers.Binary;
 using System.Numerics;
 using System.Text;
 using Blake3;
+using CUE4Parse.Encryption.Aes;
+using CUE4Parse.UE4.Pak;
+using CUE4Parse.UE4.Pak.Objects;
 using CUE4Parse.UE4.VirtualFileSystem;
 using CUE4Parse.Utils;
 
@@ -30,6 +33,9 @@ public static class SilverPalaceAes
             throw new ArgumentException("count must be a multiple of 16");
         if (reader.AesKey == null)
             throw new NullReferenceException("reader.AesKey");
+
+        if (reader is PakFileReader pakReader && pakReader.Info.Magic == FPakInfo.PAK_FILE_MAGIC_SilverPalace_StandardAes)
+            return bytes.Decrypt(beginOffset, count, reader.AesKey);
 
         var key = reader.AesKey;
         var pakName = Path.GetFileNameWithoutExtension(reader.Name).ToLower();
